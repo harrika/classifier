@@ -1,7 +1,7 @@
 # AI Programming with Python Project
 
-This is the command line section of hte Immage classifier project  
-It is mainlycomprises of three  files
+This is the command line section of the Image classifier project  
+It is mainly comprises of three(3) main files
 
 base.py  - contains helper modules and functions  
 predict.py - for predicting an image  
