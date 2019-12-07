@@ -168,8 +168,10 @@ def predict(image_path, model, topk=5, gpu="gpu"):
     ''' Predict the class of an image using a trained deep learning model'''
     
     gpu =='gpu' and model.to('cuda')
-    img = process_image(image_path)    
-    img = img.unsqueeze_(0)
+    model.to('cuda')
+    img = process_image(image_path)  
+    img = torch.from_numpy(img).type(torch.FloatTensor) 
+    img = img.unsqueeze(0)
     img = img.float()
     if gpu == 'gpu':
         with torch.no_grad():
@@ -178,6 +180,6 @@ def predict(image_path, model, topk=5, gpu="gpu"):
         with torch.no_grad():
             output=model.forward(img)  
         
-    probability = torch.exp(output.data,dim=1)
+    probability = torch.exp(output.data)
     return probability.topk(topk)
 
