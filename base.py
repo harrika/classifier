@@ -1,7 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-# %matplotlib inline
-# %config InlineBackend.figure_format = 'retina'
 import torch
 from torch import nn
 from torch import optim
@@ -17,6 +15,7 @@ def imagetrans(images='flowers'):
     train_dir = data_dir + '/train'
     valid_dir = data_dir + '/valid'
     test_dir = data_dir + '/test'
+
     data_transforms = {
     'train_transforms': transforms.Compose([transforms.RandomRotation(30),
                                           transforms.RandomResizedCrop(224),
@@ -41,6 +40,7 @@ def imagetrans(images='flowers'):
     return image_datasets['trainset'], image_datasets['validset'], image_datasets['testset']
     
 traindat, validat, testdat = imagetrans('flowers')
+
 def transloader(images):    
     dataloaders = {
     'trainloader': torch.utils.data.DataLoader(traindat, batch_size=64, shuffle=True),
@@ -81,7 +81,7 @@ def network_construct(arch='vgg', layer1=4096, dropout=0.5, lr = 0.001):
     model.classifier = classifier
     criterion = nn.NLLLoss()    
     optimizer = optim.Adam(model.classifier.parameters(), lr )
-    model.cuda()        
+    #model.cuda()        
     return model, optimizer ,criterion
 
 def validation(mm, op, cr):
@@ -97,10 +97,12 @@ def validation(mm, op, cr):
             val_lost = cr(outputs,labelsv)
             ps = torch.exp(outputs).data
             equality = (labelsv.data == ps.max(1)[1])
-            val_accuracy += equality.type_as(torch.FloatTensor()).mean()
+            #val_accuracy += equality.type_as(torch.FloatTensor()).mean()
+            val_accuracy += equality.type(torch.FloatTensor).mean()
 
     val_lost = val_lost / len(validloded)
     val_accuracy = val_accuracy /len(validloded)
+    mm.train()
     return val_lost, val_accuracy
 
 def deeplearn(model, trainloader, epochs, every, criterion, optimizer, device='cpu'):
@@ -108,8 +110,9 @@ def deeplearn(model, trainloader, epochs, every, criterion, optimizer, device='c
     steps = 0
     model.to('cuda')
     for e in range(epochs):
+        model.train()
         running_loss = 0
-        for ii, (inputs, labels) in enumerate(trainloader):
+        for ii, (inputs, labels) in enumerate(trainloded):
             steps += 1
             inputs, labels = inputs.to('cuda'), labels.to('cuda')
             optimizer.zero_grad()
@@ -124,13 +127,13 @@ def deeplearn(model, trainloader, epochs, every, criterion, optimizer, device='c
             if steps % print_every == 0:                
                 val_lost, val_accuracy = validation(model, optimizer, criterion)                 
                 print("Epoch: {}/{}... ".format(e+1, epochs),
-                  "Loss: {:.4f}".format(running_loss/print_every),
-                  "Validation Lost {:.4f}".format(val_lost),
-                  "Accuracy: {:.4f}".format(val_accuracy))                
+                  "Training loss: {:.3f}".format(running_loss/print_every),
+                  "Test loss {:.3f}".format(val_lost),
+                  "Accuracy: {:.3f}".format(val_accuracy))                
                 running_loss = 0
 
             
-def savechkpnt(model=0, arch="vgg", layer1=4096, path="checkpoint.pth"):
+def savechkpnt(model, arch="vgg", layer1=4096, path="checkpoint.pth"):
     model.class_to_idx = traindat.class_to_idx    
     model.cpu
     torch.save({'arch':arch,
@@ -155,24 +158,26 @@ def process_image(image):
         transforms.CenterCrop(224),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    ])    
-    return img_trans(img)
+    ])
+    tensor_image = img_trans(img)
+    img_procd = np.array(tensor_image)
+    img_procd = img_procd.transpose((0, 2, 1))
+    return img_procd
 
-def predict(image_path, model, topk=5, dev="gpu"):
+def predict(image_path, model, topk=5, gpu="gpu"):
     ''' Predict the class of an image using a trained deep learning model'''
     
-    dev =='gpu'and model.to('cuda')
-    model.to('cuda')
+    gpu =='gpu' and model.to('cuda')
     img = process_image(image_path)    
     img = img.unsqueeze_(0)
     img = img.float()
-    if dev == 'gpu':
+    if gpu == 'gpu':
         with torch.no_grad():
             output = model.forward(img.cuda())
     else:
         with torch.no_grad():
             output=model.forward(img)  
         
-    probability = F.softmax(output.data,dim=1)    
+    probability = torch.exp(output.data,dim=1)
     return probability.topk(topk)
 

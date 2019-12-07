@@ -1,11 +1,11 @@
-# ==============================================================================
+# ========================================================================
 # RUBIC
 # python train.py data_directory
 # python train.py data_dir --save_dir save_directory
 # python train.py data_dir --arch "vgg13"
 # python train.py data_dir --learning_rate 0.01 --hidden_units 512 --epochs 20
 # python train.py data_dir --gpu
-# ==============================================================================
+# =======================================================================
 import numpy as np
 import matplotlib.pyplot as plt
 import torch

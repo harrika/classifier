@@ -10,7 +10,7 @@
 
 #Use GPU for inference 
 # python predict.py input checkpoint --gpu
-# ===========================================================
+# ===============================================================#
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
@@ -37,18 +37,18 @@ args = parser.parse_args()
 path = args.checkpoint
 image_path = args.input
 topk = int(args.top_k)
-dev = args.gpu
+gpu = args.gpu
 
 def main():
     model=base.loadchkpnt(path)
     with open('cat_to_name.json', 'r') as jfil:
     	cat_to_name = json.load(jfil)
-    probs = base.predict(image_path, model, topk, dev)
-    names = [cat_to_name[str(ix + 1)] for ix in np.array(probs[1][0])]
+    probs = base.predict(image_path, model, topk, gpu)
+    classes = [cat_to_name[str(ix + 1)] for ix in np.array(probs[1][0])]
     probability = np.array(probs[0][0])
     i=0
     while i < topk:
-        print("{} has probability: {}".format(names[i], probability[i]))
+        print("{} has probability: {}".format(classes[i], probability[i]))
         i += 1
 
 if __name__== "__main__":
